@@ -42,11 +42,12 @@ var (
 )
 
 func init() {
-	if os.Getenv("AWS_LAMBDA_RUNTIME_API") == "" {
+	host := os.Getenv("AWS_LAMBDA_RUNTIME_API")
+	if host == "" {
 		panic("AWS_LAMBDA_RUNTIME_API is not set")
 	}
-	lambdaExtensionAPIEndpoint = "http://" + os.Getenv("AWS_LAMBDA_RUNTIME_API") + "/2020-01-01/extension"
-	lambdaTelemetryAPIEndpoint = "http://" + os.Getenv("AWS_LAMBDA_RUNTIME_API") + "/2022-07-01/telemetry"
+	lambdaExtensionAPIEndpoint = "http://" + host + "/2020-01-01/extension"
+	lambdaTelemetryAPIEndpoint = "http://" + host + "/2022-07-01/telemetry"
 }
 
 // Client is a client for Lambda Extensions API
