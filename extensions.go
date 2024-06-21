@@ -1,4 +1,4 @@
-package extension
+package extensions
 
 import (
 	"bytes"
@@ -11,11 +11,11 @@ import (
 	"os"
 )
 
-type Event string
+type EventType string
 
 const (
-	EventInvoke          = "INVOKE"
-	EventShutdown        = "SHUTDOWN"
+	Invoke               = EventType("INVOKE")
+	Shutdown             = EventType("SHUTDOWN")
 	DefaultTelemetryPort = 8080
 
 	lambdaExtensionNameHeader       = "Lambda-Extension-Name"
@@ -52,15 +52,15 @@ func init() {
 // Client is a client for Lambda Extensions API
 type Client struct {
 	Name             string // Name is the name of the extension
-	CallbackInvoke   func(context.Context, *InvokeEventResponse) error
-	CallbackShutdown func(context.Context, *ShutdownEventResponse) error
+	CallbackInvoke   func(context.Context, *InvokeEvent) error
+	CallbackShutdown func(context.Context, *ShutdownEvent) error
 
 	extensionId string
 	client      *http.Client
 }
 
 // NewClient creates a new client for Lambda Extensions API
-func NewClient(ctx context.Context, name string) *Client {
+func NewClient(name string) *Client {
 	return &Client{
 		Name:   name,
 		client: http.DefaultClient,
@@ -72,7 +72,7 @@ type registerPayload struct {
 }
 
 // Register registers the extension to the Lambda extension API
-func (c *Client) Register(ctx context.Context, events []Event) error {
+func (c *Client) Register(ctx context.Context, events ...Event) error {
 	u := fmt.Sprintf("%s/register", lambdaExtensionAPIEndpoint)
 	b, _ := json.Marshal(registerPayload{Events: events})
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(b))
@@ -99,7 +99,7 @@ func (c *Client) Register(ctx context.Context, events []Event) error {
 	return nil
 }
 
-func (c *Client) fetchNextEvent(ctx context.Context) (*EventResponse, error) {
+func (c *Client) fetchNextEvent(ctx context.Context) (*Event, error) {
 	u := fmt.Sprintf("%s/event/next", lambdaExtensionAPIEndpoint)
 	slog.DebugContext(ctx, "getting next event", "url", u, "extension_id", c.extensionId)
 	req, _ := http.NewRequestWithContext(ctx, "GET", u, nil)
@@ -115,7 +115,7 @@ func (c *Client) fetchNextEvent(ctx context.Context) (*EventResponse, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get next event: %d", resp.StatusCode)
 	}
-	var ev EventResponse
+	var ev Event
 	if err := json.NewDecoder(resp.Body).Decode(&ev); err != nil {
 		return nil, fmt.Errorf("failed to decode event response: %w", err)
 	}
@@ -242,7 +242,7 @@ func NewDefaultTelemetrySubscription() *TelemetrySubscription {
  }
 */
 
-type InvokeEventResponse struct {
+type InvokeEvent struct {
 	EventType          string `json:"eventType"`
 	DeadlineMs         int    `json:"deadlineMs"`
 	RequestID          string `json:"requestId"`
@@ -261,32 +261,30 @@ type InvokeEventResponse struct {
 }
 */
 
-type ShutdownEventResponse struct {
+type ShutdownEvent struct {
 	EventType      string `json:"eventType"`
 	DeadlineMs     int    `json:"deadlineMs"`
 	ShutdownReason string `json:"shutdownReason"`
 }
 
-type CommonResponse struct {
-	EventType string `json:"eventType"`
+type Event struct {
+	Invoke   *InvokeEvent
+	Shutdown *ShutdownEvent
 }
 
-type EventResponse struct {
-	Invoke   *InvokeEventResponse
-	Shutdown *ShutdownEventResponse
-}
-
-func (r *EventResponse) UnmarshalJSON(data []byte) error {
-	var common CommonResponse
+func (r *Event) UnmarshalJSON(data []byte) error {
+	var common struct {
+		EventType EventType `json:"eventType"`
+	}
 	if err := json.Unmarshal(data, &common); err != nil {
 		return err
 	}
 	switch common.EventType {
-	case EventInvoke:
-		r.Invoke = &InvokeEventResponse{}
+	case Invoke:
+		r.Invoke = &InvokeEvent{}
 		return json.Unmarshal(data, r.Invoke)
-	case EventShutdown:
-		r.Shutdown = &ShutdownEventResponse{}
+	case Shutdown:
+		r.Shutdown = &ShutdownEvent{}
 		return json.Unmarshal(data, r.Shutdown)
 	default:
 		return fmt.Errorf("unknown event type: %s", common.EventType)
