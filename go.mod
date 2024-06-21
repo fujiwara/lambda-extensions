@@ -1,3 +1,3 @@
-module github.com/fujiwara/lambda-extention-client
+module github.com/fujiwara/lambda-extension-client
 
 go 1.21

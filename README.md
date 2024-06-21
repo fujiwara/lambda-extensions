@@ -4,7 +4,7 @@
 
 ## Usage
 
-lambda-extention-client
+lambda-extension-client
 
 ## LICENSE
 
