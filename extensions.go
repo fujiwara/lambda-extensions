@@ -36,19 +36,7 @@ var (
 			URI:      fmt.Sprintf("http://sandbox.localdomain:%d", DefaultTelemetryPort),
 		},
 	}
-
-	lambdaExtensionAPIEndpoint string
-	lambdaTelemetryAPIEndpoint string
 )
-
-func init() {
-	host := os.Getenv("AWS_LAMBDA_RUNTIME_API")
-	if host == "" {
-		panic("AWS_LAMBDA_RUNTIME_API is not set")
-	}
-	lambdaExtensionAPIEndpoint = "http://" + host + "/2020-01-01/extension"
-	lambdaTelemetryAPIEndpoint = "http://" + host + "/2022-07-01/telemetry"
-}
 
 // Client is a client for Lambda Extensions API
 type Client struct {
@@ -56,16 +44,25 @@ type Client struct {
 	CallbackInvoke   func(context.Context, *InvokeEvent) error
 	CallbackShutdown func(context.Context, *ShutdownEvent) error
 
-	extensionId string
-	client      *http.Client
+	extensionId                string
+	client                     *http.Client
+	lambdaExtensionAPIEndpoint string
+	lambdaTelemetryAPIEndpoint string
 }
 
 // NewClient creates a new client for Lambda Extensions API
 func NewClient(name string) *Client {
-	return &Client{
-		Name:   name,
-		client: http.DefaultClient,
+	host := os.Getenv("AWS_LAMBDA_RUNTIME_API")
+	if host == "" {
+		panic("AWS_LAMBDA_RUNTIME_API is not set")
 	}
+	c := &Client{
+		Name:                       name,
+		client:                     http.DefaultClient,
+		lambdaExtensionAPIEndpoint: "http://" + host + "/2020-01-01/extension",
+		lambdaTelemetryAPIEndpoint: "http://" + host + "/2022-07-01/telemetry",
+	}
+	return c
 }
 
 type registerPayload struct {
@@ -74,7 +71,7 @@ type registerPayload struct {
 
 // Register registers the extension to the Lambda extension API
 func (c *Client) Register(ctx context.Context, events ...EventType) error {
-	u := fmt.Sprintf("%s/register", lambdaExtensionAPIEndpoint)
+	u := fmt.Sprintf("%s/register", c.lambdaExtensionAPIEndpoint)
 	b, _ := json.Marshal(registerPayload{Events: events})
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(b))
 	req.Header.Set(lambdaExtensionNameHeader, c.Name)
@@ -101,7 +98,7 @@ func (c *Client) Register(ctx context.Context, events ...EventType) error {
 }
 
 func (c *Client) fetchNextEvent(ctx context.Context) (*Event, error) {
-	u := fmt.Sprintf("%s/event/next", lambdaExtensionAPIEndpoint)
+	u := fmt.Sprintf("%s/event/next", c.lambdaExtensionAPIEndpoint)
 	slog.DebugContext(ctx, "getting next event", "url", u, "extension_id", c.extensionId)
 	req, _ := http.NewRequestWithContext(ctx, "GET", u, nil)
 	req.Header.Set(lambdaExtensionIdentifierHeader, c.extensionId)
@@ -164,7 +161,7 @@ func (c *Client) Run(ctx context.Context) error {
 
 // SubscribeTelemetry subscribes to the telemetry API
 func (c *Client) SubscribeTelemetry(ctx context.Context, subscription *TelemetrySubscription) error {
-	u := lambdaTelemetryAPIEndpoint
+	u := c.lambdaTelemetryAPIEndpoint
 	if subscription == nil {
 		subscription = NewDefaultTelemetrySubscription()
 	}
