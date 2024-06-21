@@ -1,6 +1,6 @@
 # lambda-extensions
 
-lambda-extensions is a library for AWS Lambda Extensions API.
+lambda-extensions is a library for [AWS Lambda Extensions API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-extensions-api.html).
 
 ## Usage
 
