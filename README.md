@@ -31,7 +31,7 @@ func main() {
         cancel()
         return nil
     }
-    if err := client.Register(ctx, extensions.Invoke, extensions.Shutdown); err != nil {
+    if err := client.Register(ctx); err != nil {
         log.Fatal(err)
     }
     if err := client.Run(ctx); err != nil {
@@ -67,7 +67,7 @@ func main() {
         stopHttpServer() // stop your http server
         return nil
     }
-    if err := client.Register(ctx, extensions.Shutdown); err != nil {
+    if err := client.Register(ctx); err != nil {
         log.Fatal(err)
     }
     sub := &extensions.TelemetrySubscription{

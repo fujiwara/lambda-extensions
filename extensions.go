@@ -70,8 +70,15 @@ type registerPayload struct {
 }
 
 // Register registers the extension to the Lambda extension API
-func (c *Client) Register(ctx context.Context, events ...EventType) error {
+func (c *Client) Register(ctx context.Context) error {
 	u := fmt.Sprintf("%s/register", c.lambdaExtensionAPIEndpoint)
+	events := []EventType{}
+	if c.CallbackInvoke != nil {
+		events = append(events, Invoke)
+	}
+	if c.CallbackShutdown != nil {
+		events = append(events, Shutdown)
+	}
 	b, _ := json.Marshal(registerPayload{Events: events})
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(b))
 	req.Header.Set(lambdaExtensionNameHeader, c.Name)
@@ -122,6 +129,9 @@ func (c *Client) fetchNextEvent(ctx context.Context) (*Event, error) {
 
 // Run runs the extension client
 func (c *Client) Run(ctx context.Context) error {
+	if c.extensionId == "" {
+		return fmt.Errorf("extension is not registered. call Register method first")
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -241,10 +251,10 @@ func NewDefaultTelemetrySubscription() *TelemetrySubscription {
 */
 
 type InvokeEvent struct {
-	EventType          string `json:"eventType"`
-	DeadlineMs         int    `json:"deadlineMs"`
-	RequestID          string `json:"requestId"`
-	InvokedFunctionArn string `json:"invokedFunctionArn"`
+	EventType          EventType `json:"eventType"`
+	DeadlineMs         int       `json:"deadlineMs"`
+	RequestID          string    `json:"requestId"`
+	InvokedFunctionArn string    `json:"invokedFunctionArn"`
 	Tracing            struct {
 		Type  string `json:"type"`
 		Value string `json:"value"`
@@ -260,9 +270,9 @@ type InvokeEvent struct {
 */
 
 type ShutdownEvent struct {
-	EventType      string `json:"eventType"`
-	DeadlineMs     int    `json:"deadlineMs"`
-	ShutdownReason string `json:"shutdownReason"`
+	EventType      EventType `json:"eventType"`
+	DeadlineMs     int       `json:"deadlineMs"`
+	ShutdownReason string    `json:"shutdownReason"`
 }
 
 type Event struct {
