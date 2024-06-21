@@ -68,11 +68,11 @@ func NewClient(name string) *Client {
 }
 
 type registerPayload struct {
-	Events []Event `json:"events"`
+	Events []EventType `json:"events"`
 }
 
 // Register registers the extension to the Lambda extension API
-func (c *Client) Register(ctx context.Context, events ...Event) error {
+func (c *Client) Register(ctx context.Context, events ...EventType) error {
 	u := fmt.Sprintf("%s/register", lambdaExtensionAPIEndpoint)
 	b, _ := json.Marshal(registerPayload{Events: events})
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(b))
