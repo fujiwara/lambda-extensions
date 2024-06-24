@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.0.6](https://github.com/fujiwara/lambda-extensions/compare/v0.0.5...v0.0.6) - 2024-06-24
+
 ## [v0.0.5](https://github.com/fujiwara/lambda-extensions/compare/v0.0.4...v0.0.5) - 2024-06-21
 
 ## [v0.0.4](https://github.com/fujiwara/lambda-extensions/compare/v0.0.3...v0.0.4) - 2024-06-21
