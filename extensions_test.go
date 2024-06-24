@@ -18,7 +18,10 @@ func TestMockAPI(t *testing.T) {
 	defer sv.Close()
 
 	ctx := context.Background()
-	c := extensions.NewClient("test")
+	c, err := extensions.NewClient("test")
+	if err != nil {
+		t.Fatal(err)
+	}
 	c.CallbackInvoke = func(ctx context.Context, e *extensions.InvokeEvent) error {
 		if e.EventType != extensions.Invoke {
 			t.Errorf("unexpected event type on invoke: %s", e.EventType)

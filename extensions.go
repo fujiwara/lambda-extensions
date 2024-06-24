@@ -51,10 +51,10 @@ type Client struct {
 }
 
 // NewClient creates a new client for Lambda Extensions API
-func NewClient(name string) *Client {
+func NewClient(name string) (*Client, error) {
 	host := os.Getenv("AWS_LAMBDA_RUNTIME_API")
 	if host == "" {
-		panic("AWS_LAMBDA_RUNTIME_API is not set")
+		return nil, fmt.Errorf("AWS_LAMBDA_RUNTIME_API is not set")
 	}
 	c := &Client{
 		Name:                       name,
@@ -62,7 +62,7 @@ func NewClient(name string) *Client {
 		lambdaExtensionAPIEndpoint: "http://" + host + "/2020-01-01/extension",
 		lambdaTelemetryAPIEndpoint: "http://" + host + "/2022-07-01/telemetry",
 	}
-	return c
+	return c, nil
 }
 
 type registerPayload struct {
@@ -133,13 +133,13 @@ func (c *Client) Run(ctx context.Context) error {
 		return fmt.Errorf("extension is not registered. call Register method first")
 	}
 	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-		}
 		ev, err := c.fetchNextEvent(ctx)
 		if err != nil {
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+			}
 			slog.ErrorContext(ctx, "failed to fetch next event", "error", err)
 			continue
 		}
