@@ -19,7 +19,7 @@ import (
 func main() {
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
-    client, _ := extensions.NewClient("my-extension")
+    client, _ := extensions.NewClient()
     client.CallbackInvoke = func (ctx context.Context, event *extensions.InvokeEvent) error {
         log.Printf("invoke event: %v", event)
         // do something on invoke event
@@ -60,7 +60,7 @@ func main() {
        // run http server listening on 9999 for receiving telemetry data
     }()
 
-    client, _ := extensions.NewClient("my-telemetry")
+    client, _ := extensions.NewClient()
     client.CallbackShutdown = func (ctx context.Context, event *extensions.ShutdownEvent) error {
         log.Printf("shutdown event: %v", event)
         // do something

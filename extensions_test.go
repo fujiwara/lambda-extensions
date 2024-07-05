@@ -18,7 +18,7 @@ func TestMockAPI(t *testing.T) {
 	defer sv.Close()
 
 	ctx := context.Background()
-	c, err := extensions.NewClient("test")
+	c, err := extensions.NewClient()
 	if err != nil {
 		t.Fatal(err)
 	}
