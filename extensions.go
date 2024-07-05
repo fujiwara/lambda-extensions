@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type EventType string
@@ -51,7 +52,8 @@ type Client struct {
 }
 
 // NewClient creates a new client for Lambda Extensions API
-func NewClient(name string) (*Client, error) {
+func NewClient() (*Client, error) {
+	name := filepath.Base(os.Args[0])
 	host := os.Getenv("AWS_LAMBDA_RUNTIME_API")
 	if host == "" {
 		return nil, fmt.Errorf("AWS_LAMBDA_RUNTIME_API is not set")
